@@ -15,7 +15,10 @@ The choice of the seeds is  random
 
 Command line :
 python RegionGrowing.py "imagepath" "maximum threshold possible" ( since the threshold is depenedant on the variance of pixels in a region )
-2 examples with the perfect threshold value :
+3 examples with the perfect threshold value :
+
 python RegionGrowing.py 2.jpg 10
+
 python RegionGrowing.py mri.jpg 15
+
 python RegionGrowing.py apple.jpg 12
