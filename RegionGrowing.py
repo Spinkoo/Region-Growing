@@ -103,7 +103,7 @@ class regionGrow():
                 self.passedBy[x,y] = regionNum
                 self.stack.push((x,y))
                 elems.append((int(self.im[x,y,0])+int(self.im[x,y,1])+int(self.im[x,y,2]))/3)
-                var=np.var(elems)*len(elems)
+                var=np.var(elems)
             var=max(var,self.thresh)
                 
     
