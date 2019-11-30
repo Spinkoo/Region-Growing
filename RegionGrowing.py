@@ -63,17 +63,21 @@ class regionGrow():
                     self.currentRegion += 1
                     self.passedBy[x0,y0] = self.currentRegion
                     self.stack.push((x0,y0))
+                    self.prev_region_count=0
                     while not self.stack.isEmpty():
                         x,y = self.stack.pop()
                         self.BFS(x,y)
                         self.iterations+=1
                     if(self.PassedAll()):
                         break
-                    count = np.count_nonzero(self.passedBy == self.currentRegion)
-                    if(count<8*8):     
+                    if(self.prev_region_count<8*8):     
                         self.passedBy[self.passedBy==self.currentRegion]=0
-                        x0-=1
-                        y0-=1   
+                        x0=random.randint(x0-4,x0+4)
+                        y0=random.randint(y0-4,y0+4)
+                        x0=max(0,x0)
+                        y0=max(0,y0)
+                        x0=min(x0,self.h-1)
+                        y0=min(y0,self.w-1)
                         self.currentRegion-=1
 
         for i in range(0,self.h):
@@ -104,6 +108,7 @@ class regionGrow():
                 self.stack.push((x,y))
                 elems.append((int(self.im[x,y,0])+int(self.im[x,y,1])+int(self.im[x,y,2]))/3)
                 var=np.var(elems)
+                self.prev_region_count+=1
             var=max(var,self.thresh)
                 
     
