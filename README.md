@@ -1,6 +1,8 @@
 # Region-Growing
 Region growing segmentation algorithm using python 
 
+In order to run the code with Cython optimisations, You should check the setup.py, build it and use the c_RegionGrowing module.
+
 
 
 The algorithm combines the distance between the 3 color spaces ( RGB ) to measure the homogeneity of 2 pixels 
