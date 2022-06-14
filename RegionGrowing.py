@@ -25,7 +25,7 @@ class Stack():
 
 class regionGrow():
   
-    def __init__(self,im_path,th):
+    def __init__(self,im_path,threshold):
         self.readImage(im_path)
         self.h, self.w,_ =  self.im.shape
         self.passedBy = np.zeros((self.h,self.w), np.double)
@@ -33,7 +33,7 @@ class regionGrow():
         self.iterations=0
         self.SEGS=np.zeros((self.h,self.w,3), dtype='uint8')
         self.stack = Stack()
-        self.thresh=float(th)
+        self.thresh=float(threshold)
     def readImage(self, img_path):
         self.im = cv2.imread(img_path,1)
     
@@ -90,9 +90,9 @@ class regionGrow():
         if(self.iterations>200000):
             print("Max Iterations")
         print("Iterations : "+str(self.iterations))
-        cv2.imshow("",self.SEGS)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.imshow("",self.SEGS)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
     def BFS(self, x0,y0):
         regionNum = self.passedBy[x0,y0]
         elems=[]
@@ -126,6 +126,8 @@ class regionGrow():
 
 
 
+if __name__ == '__main__':
+    exemple = regionGrow(sys.argv[1],sys.argv[2])
+    exemple.ApplyRegionGrow()
 
-exemple = regionGrow(sys.argv[1],sys.argv[2])
-exemple.ApplyRegionGrow()
+
