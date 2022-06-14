@@ -1,5 +1,6 @@
 #Build Cython version of the code
 
+#Build command is : python setup.py build_ext --inplace
 
 from setuptools import setup
 from Cython.Build import cythonize
