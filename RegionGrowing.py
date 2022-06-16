@@ -30,10 +30,10 @@ class regionGrow():
         self.h, self.w,_ =  self.im.shape
         self.passedBy = np.zeros((self.h,self.w), np.double)
         self.currentRegion = 0
-        self.iterations=0
-        self.SEGS=np.zeros((self.h,self.w,3), dtype='uint8')
+        self.iterations = 0
+        self.SEGS = np.zeros((self.h,self.w,3), dtype='uint8')
         self.stack = Stack()
-        self.thresh=float(threshold)
+        self.thresh = float(threshold)
     def readImage(self, img_path):
         self.im = cv2.imread(img_path,1)
     
@@ -60,14 +60,18 @@ class regionGrow():
             for y0 in range (self.w):
          
                 if self.passedBy[x0,y0] == 0 and (int(self.im[x0,y0,0])*int(self.im[x0,y0,1])*int(self.im[x0,y0,2]) > 0) :  
+
                     self.currentRegion += 1
                     self.passedBy[x0,y0] = self.currentRegion
                     self.stack.push((x0,y0))
                     self.prev_region_count=0
+
                     while not self.stack.isEmpty():
+
                         x,y = self.stack.pop()
                         self.BFS(x,y)
                         self.iterations+=1
+
                     if(self.PassedAll()):
                         break
                     if(self.prev_region_count<8*8):     
@@ -80,13 +84,14 @@ class regionGrow():
                         y0=min(y0,self.w-1)
                         self.currentRegion-=1
 
-        for i in range(0,self.h):
-            for j in range (0,self.w):
-                val = self.passedBy[i][j]
-                if(val==0):
-                    self.SEGS[i][j]=255,255,255
-                else:
-                    self.SEGS[i][j]=val*35,val*90,val*30
+
+        self.SEGS[self.passedBy == 0] = 255,255,255
+        msks = self.passedBy != 0
+        expanded_passby = np.expand_dims(self.passedBy[msks], axis=1)
+        op = np.concatenate((expanded_passby * 35 % 255,expanded_passby * 90 % 255 ,expanded_passby * 30 % 255), axis=-1)
+        print(op.shape)
+        self.SEGS[msks] = op
+
         if(self.iterations>200000):
             print("Max Iterations")
         print("Iterations : "+str(self.iterations))

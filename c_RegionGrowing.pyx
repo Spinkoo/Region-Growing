@@ -28,23 +28,26 @@ class Stack():
 
 cdef class regionGrow():
   
-    cdef public unsigned char[:, :, :]  SEGS
+    cdef public int[:, :, :]  im
     cdef public int h, w, currentRegion, iterations, prev_region_count
     cdef public double thresh
-    cdef public object stack, passedBy, im
+    cdef public object stack, passedBy,  SEGS
+    cdef double[20] var
 
 
     def __init__(self,im_path,threshold):
-        self.im = np.array(cv2.imread(im_path,1))
+        self.im = np.array(cv2.imread(im_path,1)).astype('int')
         #self.readImage(im_path)
-        self.h, self.w,_ =  self.im.shape
+        self.h, self.w,_ = np.array(cv2.imread(im_path,1)).shape
         self.passedBy = np.zeros((self.h,self.w), np.double)
         self.currentRegion = 0
         self.iterations=0
         self.SEGS=np.zeros((self.h,self.w,3), dtype='uint8')
         self.stack = Stack()
         self.thresh=float(threshold)
+        
         self.prev_region_count=0
+        self.var = np.zeros(20, dtype=np.float16)
         
     def readImage(self, img_path):
         self.im = cv2.imread(img_path,1)
@@ -95,42 +98,51 @@ cdef class regionGrow():
                         y0=min(y0,self.w-1)
                         self.currentRegion-=1
 
-        cdef int val, i, j
-        for i in range(0,self.h):
-            for j in range (0,self.w):
-                val = self.passedBy[i][j]
-                if( val == 0):
-                    self.SEGS[i][j][0] = 255
-                    self.SEGS[i][j][1] = 255
-                    self.SEGS[i][j][2] = 255
-                else:
-                    self.SEGS[i][j][0] = val*35 % 255
-                    self.SEGS[i][j][1] = val*90 % 255
-                    self.SEGS[i][j][2] = val*30 % 255
+        self.SEGS[self.passedBy == 0] = 255,255,255
+
+        msks = self.passedBy != 0
+        expanded_passby = np.expand_dims(self.passedBy[msks], axis=1)
+
+        op = np.concatenate((expanded_passby * 35 % 255,expanded_passby * 90 % 255 ,expanded_passby * 30 % 255), axis=-1)
+        
+        self.SEGS[msks] = op
+
         if(self.iterations>200000):
             print("Max Iterations")
         return self.SEGS
     cdef BFS(self, int x0,int y0):
         cdef int regionNum, x, y
-        cdef double var
+        
         regionNum = self.passedBy[x0,y0]
-        elems =  []
-        elems.append((int(self.im[x0,y0,0])+int(self.im[x0,y0,1])+int(self.im[x0,y0,2]))/3)
-        var = self.thresh
+        
+        if self.var[regionNum] == 0:
+            self.var[regionNum] = self.thresh
         neighbours=self.getNeighbour(x0,y0)
+        elems =  []
+        elems.append(sum(self.im[x0, y0, :]) / 3 )
         
 
         for x,y in neighbours:
-            if self.passedBy[x,y] == 0 and self.distance(x,y,x0,y0) < var:
+            if self.passedBy[x,y] == 0 and self.distance(x,y,x0,y0) < self.var[regionNum]:
                 if(self.PassedAll()):
                     break
                 self.passedBy[x,y] = regionNum
+
                 self.stack.push((x,y))
-                elems.append((self.im[x,y,0]+self.im[x,y,1]+self.im[x,y,2])/3)
-                var=np.var(elems)
+
+                elems.append( (self.im[x,y,0] + self.im[x,y,1] + self.im[x,y,2])  / 3)
+
+                self.var[regionNum] = np.var(elems)
                 self.prev_region_count+=1
-                
-            var=max(var,self.thresh)
+            
+            self.var[regionNum] = max(self.var[regionNum], self.thresh)
+
+    cdef BFS_elem_prop(self, int x0,int y0, int x, int y, int regionNum, ):
+
+        elems =  []
+        elems.append(sum(self.im[x0, y0, :]) / 3 )
+
+
                 
     
     
@@ -139,10 +151,14 @@ cdef class regionGrow():
         return self.iterations>200000 or np.count_nonzero(self.passedBy > 0) == self.w*self.h
 
 
-    cdef limit(self, x,y):
+    cdef limit(self, int x,int y):
         return  0<=x<self.h and 0<=y<self.w
-    def distance(self,x,y,x0,y0):
-        return ((int(self.im[x,y,0])-int(self.im[x0,y0,0]))**2+(int(self.im[x,y,1])-int(self.im[x0,y0,1]))**2+(int(self.im[x,y,2])-int(self.im[x0,y0,2]))**2)**0.5
+    def distance(self, int x,int y,int x0,int y0):
+        #return np.linalg.norm(self.im[x,y]-self.im[x0,y0], ord=2)
+        #a = self.im[x,y].astype('int')
+        #b = self.im[x0,y0].astype('int')
+        #return np.linalg.norm(a-b, ord=2)
+        return ((self.im[x,y,0]-self.im[x0,y0,0])**2+(self.im[x,y,1]-self.im[x0,y0,1])**2+(self.im[x,y,2]-self.im[x0,y0,2])**2)**0.5
 
 
 
