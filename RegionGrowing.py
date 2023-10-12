@@ -1,4 +1,5 @@
 import cv2
+import itertools
 import numpy as np
 import random
 import sys
@@ -35,93 +36,111 @@ class regionGrow():
         self.stack = Stack()
         self.thresh=float(th)
     def readImage(self, img_path):
-        self.im = cv2.imread(img_path,1)
+        self.im = cv2.imread(img_path,1).astype('int')
     
 
     def getNeighbour(self, x0, y0):
-        neighbour = []
-        for i in (-1,0,1):
-            for j in (-1,0,1):
-                if (i,j) == (0,0): 
-                    continue
-                x = x0+i
-                y = y0+j
-                if self.limit(x,y):
-                    neighbour.append((x,y))
-        return neighbour
-    def ApplyRegionGrow(self):
-        randomseeds=[[self.h/2,self.w/2],
+        return [
+            (x, y)
+            for i, j in itertools.product((-1, 0, 1), repeat=2)
+            if (i, j) != (0, 0) and self.boundaries(x := x0 + i, y := y0 + j)
+        ]
+    
+    def ApplyRegionGrow(self, cv_display = True):
+        randomseeds=[
+            [self.h/2,self.w/2],
             [self.h/3,self.w/3],[2*self.h/3,self.w/3],[self.h/3-10,self.w/3],
             [self.h/3,2*self.w/3],[2*self.h/3,2*self.w/3],[self.h/3-10,2*self.w/3],
             [self.h/3,self.w-10],[2*self.h/3,self.w-10],[self.h/3-10,self.w-10]
                     ]
         np.random.shuffle(randomseeds)
+
         for x0 in range (self.h):
             for y0 in range (self.w):
-         
-                if self.passedBy[x0,y0] == 0 and (int(self.im[x0,y0,0])*int(self.im[x0,y0,1])*int(self.im[x0,y0,2]) > 0) :  
+
+                if self.passedBy[x0,y0] == 0 and (np.all(self.im[x0,y0] > 0)) :  
                     self.currentRegion += 1
                     self.passedBy[x0,y0] = self.currentRegion
                     self.stack.push((x0,y0))
-                    self.prev_region_count=0
+                    self.prev_region_count= 0
+
                     while not self.stack.isEmpty():
                         x,y = self.stack.pop()
                         self.BFS(x,y)
                         self.iterations+=1
-                    if(self.PassedAll()):
-                        break
-                    if(self.prev_region_count<8*8):     
-                        self.passedBy[self.passedBy==self.currentRegion]=0
-                        x0=random.randint(x0-4,x0+4)
-                        y0=random.randint(y0-4,y0+4)
-                        x0=max(0,x0)
-                        y0=max(0,y0)
-                        x0=min(x0,self.h-1)
-                        y0=min(y0,self.w-1)
-                        self.currentRegion-=1
 
-        for i in range(0,self.h):
-            for j in range (0,self.w):
-                val = self.passedBy[i][j]
-                if(val==0):
-                    self.SEGS[i][j]=255,255,255
-                else:
-                    self.SEGS[i][j]=val*35,val*90,val*30
-        if(self.iterations>200000):
+                    if self.PassedAll():
+                        break
+
+                    if self.prev_region_count< 8*8 :     
+                       x0, y0 = self.reset_region(x0, y0)
+                       
+
+        
+        
+        if self.iterations>200000:
             print("Max Iterations")
-        print("Iterations : "+str(self.iterations))
+        print(f"Iterations : {str(self.iterations)}")
+
+        if cv_display:
+            [self.color_pixel(i,j) for i, j in itertools.product(range(self.h), range (self.w))]
+            self.display()
+
+    def reset_region(self, x0, y0):
+
+        self.passedBy[self.passedBy==self.currentRegion] = 0
+        x0=random.randint(x0-4,x0+4)
+        y0=random.randint(y0-4,y0+4)
+        x0 = np.clip(x0, 0, self.h - 1)
+        y0 = np.clip(y0, 0, self.w - 1)
+        self.currentRegion-=1
+        return x0, y0
+
+    def color_pixel(self, i, j):
+        val = self.passedBy[i][j]
+        self.SEGS[i][j] = (255, 255, 255) if (val==0) else (val*35, val*90, val*30)
+
+    def display(self):
         cv2.imshow("",self.SEGS)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
     def BFS(self, x0,y0):
+
         regionNum = self.passedBy[x0,y0]
-        elems=[]
-        elems.append((int(self.im[x0,y0,0])+int(self.im[x0,y0,1])+int(self.im[x0,y0,2]))/3)
-        var=self.thresh
-        neighbours=self.getNeighbour(x0,y0)
         
+        elems = [np.mean(self.im[x0, y0])]
+
+        var=self.thresh
+
+        neighbours=self.getNeighbour(x0,y0)
+
         for x,y in neighbours:
-            if self.passedBy[x,y] == 0 and self.distance(x,y,x0,y0)<var:
-                if(self.PassedAll()):
-                    break;
+            if self.passedBy[x,y] == 0 and self.distance(x,y,x0,y0) < var:
+
+                if self.PassedAll():
+                    break
+
                 self.passedBy[x,y] = regionNum
                 self.stack.push((x,y))
-                elems.append((int(self.im[x,y,0])+int(self.im[x,y,1])+int(self.im[x,y,2]))/3)
+                elems.append(np.mean(self.im[x,y]))
                 var=np.var(elems)
                 self.prev_region_count+=1
             var=max(var,self.thresh)
                 
     
     
-    def PassedAll(self):
+    def PassedAll(self, max_iteration = 200000):
    
-        return self.iterations>200000 or np.count_nonzero(self.passedBy > 0) == self.w*self.h
+        return self.iterations > max_iteration or np.all(self.passedBy > 0)
 
 
-    def limit(self, x,y):
+    def boundaries(self, x,y):
         return  0<=x<self.h and 0<=y<self.w
+    
     def distance(self,x,y,x0,y0):
-        return ((int(self.im[x,y,0])-int(self.im[x0,y0,0]))**2+(int(self.im[x,y,1])-int(self.im[x0,y0,1]))**2+(int(self.im[x,y,2])-int(self.im[x0,y0,2]))**2)**0.5
+
+        return np.linalg.norm(self.im[x0, y0] - self.im[x, y])
 
 
 

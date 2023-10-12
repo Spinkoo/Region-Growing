@@ -19,16 +19,16 @@ python RegionGrowing.py "imagepath" "maximum threshold possible" ( since the thr
 
 * for the unsupervised segmentation *
 
-python RegionGrowing.py 2.jpg 10
+python RegionGrowing.py examples/cat.jpg 10
 
-python RegionGrowing.py mri.jpg 15
+python RegionGrowing.py examples/mri.jpg 15
 
-python RegionGrowing.py apple.jpg 12
+python RegionGrowing.py examples/apple.jpg 12
 
 
 * for the supervised segmentation *
 
-python RegionGrowingSV.py apple.jpg 12
+python RegionGrowingSV.py examples/apple.jpg 12
 
 The image will popup :
 
