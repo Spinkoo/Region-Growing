@@ -46,19 +46,23 @@ class regionGrow():
             if (i, j) != (0, 0) and self.boundaries(x := x0 + i, y := y0 + j)
         ]
     
-    def ApplyRegionGrow(self, cv_display = True):
-        randomseeds=[
+
+    def create_seeds(self):
+        return [
             [self.h/2,self.w/2],
             [self.h/3,self.w/3],[2*self.h/3,self.w/3],[self.h/3-10,self.w/3],
             [self.h/3,2*self.w/3],[2*self.h/3,2*self.w/3],[self.h/3-10,2*self.w/3],
             [self.h/3,self.w-10],[2*self.h/3,self.w-10],[self.h/3-10,self.w-10]
                     ]
+    def ApplyRegionGrow(self, cv_display = True):
+
+        randomseeds = self.create_seeds()
         np.random.shuffle(randomseeds)
 
         for x0 in range (self.h):
             for y0 in range (self.w):
 
-                if self.passedBy[x0,y0] == 0 and (np.all(self.im[x0,y0] > 0)) :  
+                if self.passedBy[x0,y0] == 0 : #and (np.all(self.im[x0,y0] > 0)) :  
                     self.currentRegion += 1
                     self.passedBy[x0,y0] = self.currentRegion
                     self.stack.push((x0,y0))
