@@ -11,24 +11,42 @@ The choice of the seeds is  random
 
 
 
-* EXAMPLE TO USE *
+* EXAMPLE TO USE 
 
 Command line :
-python RegionGrowing.py "imagepath" "maximum threshold possible" ( since the threshold is depenedant on the variance of pixels in a region )
+
+```python RegionGrowing.py "imagepath" "maximum threshold possible"``` ( since the threshold is depenedant on the variance of pixels in a region )
 3 examples with the perfect threshold value :
 
-* for the unsupervised segmentation *
+* Unsupervised segmentation 
 
+```
 python RegionGrowing.py examples/cat.jpg 10
+```
 
+
+![Screenshot](examples/cat.jpg)
+![Screenshot](outputs/cat.jpg)
+
+```
 python RegionGrowing.py examples/mri.jpg 15
+```
 
+![Screenshot](examples/mri.jpg)
+![Screenshot](outputs/mri.jpg)
+
+```
 python RegionGrowing.py examples/apple.jpg 12
+```
 
+![Screenshot](examples/apple.jpg)
+![Screenshot](outputs/apple.jpg)
 
-* for the supervised segmentation *
+* Supervised segmentation 
 
+```
 python RegionGrowingSV.py examples/apple.jpg 12
+```
 
 The image will popup :
 
